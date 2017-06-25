@@ -1,0 +1,206 @@
+\input{beamer_head}
+
+
+% 使用 \part,\section,\subsection 等命令组织文档结构
+% 使用 \frame 命令制作幻灯片
+
+\begin{document}
+
+\logo{\includegraphics[height=0.09\textwidth]{fudan2.png}}
+\title[课程项目报告]{基于区域分割的阴影检测和去除算法研究}
+\author[刘超颖-14CS]{刘超颖-14CS}
+\institute[FDU]{计算机科学与技术学院}
+\date{\today}
+
+% 定义目录页
+\AtBeginPart{
+  \frame{
+    \frametitle{\partpage}
+    \begin{multicols}{2}
+% 如果目录过长，可以打开这个选项分两栏显示
+      \tableofcontents
+% 使用这个命令自动生成目录
+    \end{multicols}
+  }  
+}
+
+% 在每个Section前都会加入的Frame
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{}
+	\setcounter{tocdepth}{2}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+% 在每个Subsection前都会加入的Frame
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>
+%\begin{frame}<handout:0>
+% handout:0 表示只在手稿中出现
+    \frametitle{Outline}
+	\setcounter{tocdepth}{2}
+    \tableofcontents[currentsection,currentsubsection]
+% 显示在目录中加亮的当前章节
+  \end{frame}
+}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitle{Table of Contents}
+  \setcounter{tocdepth}{2}
+  \tableofcontents
+\end{frame}
+
+
+\section{引言}
+\begin{frame}
+\frametitle{算法的整体思路}
+\begin{itemize}
+	\setlength\itemsep{1cm}
+	\item 传统的全局优化算法难以处理阴影区域内部材质发生变化的情况：
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.2]{1}
+\end{figure}
+
+\end{frame}
+\begin{frame}
+\frametitle{算法的整体思路}
+\begin{itemize}
+	\item 考虑将图像分割成一块块的小区域；
+	\item 以区域为单位进行阴影检测和去除；
+	\item 充分利用区域和区域之间是否光照条件相同，是否为相同材料这类信息。
+\end{itemize}
+\begin{figure}
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\includegraphics[width=2.2in]{2}
+\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\includegraphics[width=2.2in]{3}
+\end{minipage}
+\end{figure}
+\end{frame}
+
+\section{阴影检测}
+\begin{frame}
+\frametitle{算法核心思路}
+\begin{itemize}
+	\setlength\itemsep{0.5cm}
+	\item 对每个区域提特征，判断是否为阴影区；
+	\item 区域和区域之间的关系能否为我们判断阴影区域提供帮助？
+	\pause
+	\begin{itemize}
+		\item 相同材料，相同亮度
+		\item 相同材料，不同亮度
+		\item 不同材料
+	\end{itemize}
+	\item 构造能量函数，求解最优取值方案.
+\begin{align}
+\widehat{y}= & \arg \max_y \sum_{i=1}c_i^{shadow}y_i+\alpha_1\sum_{\{i,j\}\in E_{diff}}c_{ij}^{diff}(y_i-y_j) \\
+&  -\alpha_2\sum_{\{i,j\}\in E_{same}}c_{ij}^{same}[y_i\ne y_j]
+\end{align}
+\end{itemize}
+\end{frame}
+\section{阴影去除}
+\begin{frame}
+\frametitle{算法核心思路}
+\begin{itemize}
+	\item 传统方法中阴影区域直接用整个非阴影区域的颜色进行补偿；
+	\item 我们将图像分割成区域后，可以单独考虑每块阴影区域的颜色；
+	\item 如果一块阴影区与一块非阴影区具有相同的材质，则按照这块非阴影区的颜色去修改阴影区比较合适；
+	\item CIEL*a*b空间直方图均衡；
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.3]{10}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{算法的改进}
+\begin{itemize}
+	\item 原算法对边缘的处理不够充分：
+	\begin{itemize}
+		\item 存在一些半影区的像素没有被标记为阴影像素；
+		\item 在非阴影区内部可能存在小于一半的阴影像素；
+	\end{itemize}
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.3]{4}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{算法的改进}
+\begin{itemize}
+	\item 使用形态学方法找出这些可能是阴影或者未处理的阴影像素；
+	\item 用in-painting算法对这些区域进行填充；
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.3]{5}
+\end{figure}
+\end{frame}
+\section{实验}
+\begin{frame}
+\frametitle{算法的实现}
+\begin{itemize}
+	\item 阴影检测和阴影去除的核心代码均用Matlab实现；
+	\item 比较费时的过程用C++实现再封装为Matlab借口，比如SAP最大流算法；
+	\item 为了进行对比实现了一种传统的全局处理的方法；
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{阴影检测算法}
+\begin{itemize}
+	\item 使用了三个数据集进行测试，评价方法采用逐像素比较；
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.4]{6}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{阴影去除算法}
+\begin{itemize}
+	\item 使用RMSE评价方法：
+\end{itemize}
+\begin{figure}
+\center
+%\includegraphics[scale=0.5]{9}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{实际运行效果}
+%\includegraphics[scale=0.45]{7}
+\end{frame}
+\begin{frame}
+\frametitle{实际运行效果}
+\begin{figure}
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\includegraphics[width=2.2in]{11}
+\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\includegraphics[width=2.2in]{12}
+\end{minipage}
+\end{figure}
+\end{frame}
+\begin{frame}
+	\begin{spacing}{1.5}
+	\begin{center}
+	\Huge{\textbf{Thanks for your attention!}}
+
+	\Huge{\textit{Any questions?}}
+\end{center}
+\end{spacing}
+\end{frame}
+\end{document}
